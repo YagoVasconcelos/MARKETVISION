@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import os
 
+
 # CONFIG
 st.set_page_config(
     page_title="MarketVision PRO",
@@ -10,7 +11,7 @@ st.set_page_config(
     page_icon="📊"
 )
 
-st.image("logo.png", width=150)
+st.image("assets/logo.png", width=150)
 
 # DARK MODE
 st.markdown("""
