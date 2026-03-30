@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import os
 
 # CONFIG
 st.set_page_config(
@@ -9,15 +10,12 @@ st.set_page_config(
     page_icon="📊"
 )
 
-# DARK STYLE
+# DARK MODE
 st.markdown("""
     <style>
         .stApp {
             background-color: #0e1117;
             color: white;
-        }
-        .css-1d391kg {
-            background-color: #111827;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -30,58 +28,87 @@ st.markdown("### Inteligência de Mercado com Big Data")
 st.sidebar.title("📂 Controle")
 file = st.sidebar.file_uploader("Envie um CSV", type=["csv"])
 
-# FUNÇÃO
-@st.cache_data
-def load_data(file):
-    df = pd.read_csv(file)
+# =========================
+# LOAD DATA (SEM BUG)
+# =========================
+def load_data(source):
+    df = pd.read_csv(source)
     df.columns = df.columns.str.lower()
     return df
 
-if file:
-    df = load_data(file)
+# =========================
+# CARREGAMENTO SEGURO
+# =========================
+try:
+    if file:
+        df = load_data(file)
+    else:
+        caminho = os.path.join("data", "exemplo.csv")
+        df = load_data(caminho)
+except Exception as e:
+    st.error(f"Erro ao carregar dados: {e}")
+    st.stop()
 
-    # FILTRO
-    st.sidebar.subheader("🔎 Filtros")
-    cidade = st.sidebar.multiselect("Cidade", df['cidade'].unique(), default=df['cidade'].unique())
+# =========================
+# FILTROS
+# =========================
+st.sidebar.subheader("🔎 Filtros")
 
+if 'cidade' in df.columns:
+    cidade = st.sidebar.multiselect(
+        "Cidade",
+        df['cidade'].dropna().unique(),
+        default=df['cidade'].dropna().unique()
+    )
     df = df[df['cidade'].isin(cidade)]
 
-    # KPIs
-    col1, col2, col3 = st.columns(3)
+# =========================
+# KPIs
+# =========================
+col1, col2, col3 = st.columns(3)
 
-    col1.metric("Empresas", len(df))
-    col2.metric("Setores", df['setor'].nunique())
-    col3.metric("Cidades", df['cidade'].nunique())
+col1.metric("Empresas", len(df))
+col2.metric("Setores", df['setor'].nunique() if 'setor' in df.columns else 0)
+col3.metric("Cidades", df['cidade'].nunique() if 'cidade' in df.columns else 0)
 
-    st.divider()
+st.divider()
 
-    # GRÁFICO
-    colA, colB = st.columns(2)
+# =========================
+# GRÁFICOS
+# =========================
+colA, colB = st.columns(2)
 
-    with colA:
-        st.subheader("🏢 Setores")
+with colA:
+    st.subheader("🏢 Setores")
+    if 'setor' in df.columns:
         fig = px.pie(df, names='setor')
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch', key="grafico_pizza")
 
-    with colB:
-        st.subheader("📊 Distribuição")
-        fig2 = px.bar(df['setor'].value_counts().reset_index(),
-                      x='setor', y='count')
-        st.plotly_chart(fig2, use_container_width=True)
+with colB:
+    st.subheader("📊 Distribuição")
+    if 'setor' in df.columns:
+        setor_df = df['setor'].value_counts().reset_index()
+        setor_df.columns = ['setor', 'count']
+        fig2 = px.bar(setor_df, x='setor', y='count')
+        st.plotly_chart(fig2, width='stretch', key="grafico_barra")
 
-    st.divider()
+st.divider()
 
-    # MAPA
-    if 'lat' in df and 'lon' in df:
-        st.subheader("🗺️ Mapa de Empresas")
-        st.map(df[['lat', 'lon']])
+# =========================
+# MAPA
+# =========================
+if 'lat' in df.columns and 'lon' in df.columns:
+    st.subheader("🗺️ Mapa de Empresas")
+    st.map(df[['lat', 'lon']])
 
-    # OPORTUNIDADES
-    st.subheader("💡 Oportunidades")
-    setor_count = df['setor'].value_counts()
-    oportunidades = setor_count[setor_count < 3]
+# =========================
+# OPORTUNIDADES
+# =========================
+oportunidades = (
+    df['setor']
+    .value_counts()
+    .loc[lambda x: x < 3]
+    .to_frame(name="quantidade")
+)
 
-    st.dataframe(oportunidades)
-
-else:
-    st.info("👈 Envie um CSV para começar")
+st.dataframe(oportunidades)
