@@ -73,15 +73,15 @@ def gerar_base_para_final():
         # Dispersão mínima de 0.006 para ficar no centro urbano
         data.append({
             "cnpj": f"{np.random.randint(10,99)}.{np.random.randint(100,999)}/0001-{np.random.randint(10,99)}",
-            "empresa": f"Market {np.random.randint(100, 999)} {setor}",
+            "empresa": f"{np.random.choice(['J.P.', 'M.S.', 'A.C.'])} {setor.upper()} LTDA",
             "setor": setor,
             "cidade": cidade,
             "regiao": "Pará",
             "capital_social": round(cap_atual, 2),
             "investimento_inicial": round(inv_inicial, 2),
             "anos_atividade": anos,
-            "lat": coords[0] + np.random.uniform(-0.008, 0.008),
-            "lon": coords[1] + np.random.uniform(-0.008, 0.008)
+            "lat": coords[0] + np.random.uniform(-0.003, 0.003),
+            "lon": coords[1] + np.random.uniform(-0.003, 0.003)
         })
 
     df = pd.DataFrame(data)

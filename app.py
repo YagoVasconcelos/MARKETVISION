@@ -144,38 +144,64 @@ with tab1:
         with st.container(border=True):
             st.subheader("💰 Capital Médio")
             cap_setor = df_filtered.groupby('setor')['capital_social'].mean().reset_index()
-            fig2 = px.bar(cap_setor, x='setor', y='capital_social')
-            # Tira a margem interna e ajusta a altura
-            fig2.update_layout(margin=dict(t=30, b=10, l=10, r=10), height=350)
+            
+            # --- ALTERAÇÃO AQUI ---
+            fig2 = px.bar(
+                cap_setor, 
+                x='setor', 
+                y='capital_social',
+                color='setor',  # <-- ISSO SINCRONIZA A COR COM A PIZZA E O MAPA
+                text_auto='.2s' # Adiciona o valor no topo da barra (opcional, mas fica top)
+            )
+            
+            fig2.update_layout(
+                margin=dict(t=30, b=10, l=10, r=10), 
+                height=350,
+                showlegend=False # Esconde a legenda aqui para não poluir, já que a da pizza serve
+            )
+            # -----------------------
+            
             st.plotly_chart(fig2, width='stretch', key="b_cap")
 
     # MAPA COM TRAVA DE SEGURANÇA
     if 'lat' in df_filtered.columns and 'lon' in df_filtered.columns:
         with st.container(border=True):
-            st.subheader("🗺️ Localização Real (Dados IBGE)")
-            
-            # Filtro extra: remove qualquer dado fora do limite do Pará (Segurança anti-oceano)
-            df_mapa = df_filtered[
-                (df_filtered['lat'] < 2.5) & (df_filtered['lat'] > -10.0) &
-                (df_filtered['lon'] < -45.0) & (df_filtered['lon'] > -59.0)
-            ]
+            st.subheader("🗺️ Inteligência Geográfica (Dados Oficiais)")
 
+            # Criando o mapa
             fig_mapa = px.scatter_map(
-                df_mapa, # Usamos o df_mapa limpo aqui
-                lat="lat", lon="lon", 
-                color="setor", 
-                size_max=12,
-                zoom=6, # Zoom mais afastado para ver o estado todo primeiro
-                opacity=0.8,
-                hover_name="empresa", 
+                df_filtered,
+                lat="lat",
+                lon="lon",
+                color="setor",
+                size="capital_social",
+                size_max=15,
+                zoom=12,
+                hover_name="empresa",
+                # O custom_data garante que o Plotly "carregue" as colunas para o balão
+                custom_data=["cnpj", "setor", "capital_social", "cidade"],
                 map_style="carto-darkmatter"
             )
-            
-            fig_mapa.update_layout(
-                height=600, 
-                margin={"r":0,"t":0,"l":0,"b":0}
+
+            # Configurando o balão (Hover) de forma manual e segura
+            fig_mapa.update_traces(
+                hovertemplate="""
+                <b>%{hovertext}</b><br>
+                <b>CNPJ:</b> %{customdata[0]}<br>
+                <b>Setor:</b> %{customdata[1]}<br>
+                <b>Capital:</b> R$ %{customdata[2]:,.2f}<br>
+                <b>Cidade:</b> %{customdata[3]}
+                <extra></extra>
+                """
             )
-            st.plotly_chart(fig_mapa, width='stretch', key="mapa_final_v10")
+
+            fig_mapa.update_layout(
+                height=700,
+                margin={"r":0,"t":0,"l":0,"b":0},
+                legend=dict(orientation="h", yanchor="bottom", y=0.01, xanchor="left", x=0.01, bgcolor="rgba(0,0,0,0.5)")
+            )
+
+            st.plotly_chart(fig_mapa, width='stretch', key="mapa_final_v3")
 
 with tab2:
     st.subheader("🧠 Consultoria Estratégica MarketVision")
