@@ -1,0 +1,19 @@
+# Dependências
+node_modules/
+
+# Builds
+dist/
+build/
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Arquivos grandes / executáveis
+*.exe
+
+# Variáveis de ambiente
+.env
