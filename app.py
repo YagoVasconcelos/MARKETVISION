@@ -1,8 +1,16 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
-import numpy as np
 import os
+from datetime import datetime
+from services.filters import apply_filters
+from services.charts import (create_pie_chart, create_bar_chart, create_map)
+
+# --- SESSION STATE INICIAL ---
+if "df_raw" not in st.session_state:
+    st.session_state.df_raw = None
+
+if "base_ativa" not in st.session_state:
+    st.session_state.base_ativa = "empresas.csv"
 
 # --- CONFIGURAÇÃO ---
 st.set_page_config(page_title="MarketVision PRO", layout="wide", page_icon="assets/logo.png")
@@ -11,24 +19,26 @@ with open("styles/style.css") as f:
     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 # --- 2. FUNÇÃO DE CARREGAMENTO ---
-def load_data(source):
-    df = pd.read_csv(source)
-    df.columns = df.columns.str.lower()
-    if 'data_abertura' in df.columns:
-        df['data_abertura'] = pd.to_datetime(df['data_abertura'])
-    if 'capital_social' in df.columns:
-        df['capital_social'] = pd.to_numeric(df['capital_social'], errors='coerce').fillna(0)
-    return df
+from services.loader import load_csv
 
-# --- 3. LOGICA INICIAL DE DADOS (CORRIGIDO: VEM ANTES DA SIDEBAR) ---
-file = None # Inicializa para evitar erros
+# --- 3. LOGICA INICIAL DE DADOS ---
+file = None
+
 try:
-    # Primeiro verificamos se há um arquivo na sidebar ANTES de renderizar o resto
-    caminho_exemplo = os.path.join("data", "exemplo.csv")
-    df_raw = load_data(caminho_exemplo)
+    if st.session_state.df_raw is None:
+        caminho_exemplo = os.path.join(
+            "data",
+            "raw",
+            "empresas.csv"
+        )
+        st.session_state.df_raw = load_csv(caminho_exemplo)
+
 except Exception as e:
+
     st.error(f"Erro ao carregar base: {e}")
     st.stop()
+
+df_raw = st.session_state.df_raw
 
 # --- 4. PAINEL LATERAL (SIDEBAR) ---
 with st.sidebar:
@@ -37,16 +47,90 @@ with st.sidebar:
     st.divider()
 
     with st.expander("📂 Carregar Dados", expanded=False):
-        uploaded_file = st.file_uploader("CSV", type=["csv"], label_visibility="collapsed")
+
+        uploaded_file = st.file_uploader(
+            "CSV",
+            type=["csv"],
+            label_visibility="collapsed"
+        )
+
         if uploaded_file:
-            df_raw = load_data(uploaded_file)
+
+            nome_arquivo = (
+                f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_"
+                f"{uploaded_file.name}"
+            )
+
+            caminho_upload = os.path.join(
+                "data",
+                "raw",
+                "uploads",
+                nome_arquivo
+            )
+
+            with open(caminho_upload, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+
+            st.session_state.df_raw = load_csv(caminho_upload)
+            st.session_state.base_ativa = nome_arquivo
+
+            df_raw = st.session_state.df_raw
+
+            st.success(f"Arquivo salvo: {nome_arquivo}")
+
+    # HISTÓRICO DE BASES
+    st.markdown("### 🗂 Histórico")
+    st.success(f"📁 Base ativa: {st.session_state.base_ativa}")
+    pasta_uploads = os.path.join(
+        "data",
+        "raw",
+        "uploads"
+    )
+
+    arquivos = []
+
+    if os.path.exists(pasta_uploads):
+
+        arquivos = sorted(
+            os.listdir(pasta_uploads),
+            reverse=True
+        )
+
+    if arquivos:
+
+        arquivo_escolhido = st.selectbox(
+            "Bases disponíveis",
+            arquivos,
+            label_visibility="collapsed"
+        )
+
+        if st.button("📂 Abrir Base"):
+
+            caminho_base = os.path.join(
+                pasta_uploads,
+                arquivo_escolhido
+            )
+
+            st.session_state.df_raw = load_csv(caminho_base)
+            st.session_state.base_ativa = arquivo_escolhido
+
+            df_raw = st.session_state.df_raw
+
+            st.success(f"Base carregada: {arquivo_escolhido}")
+
+    else:
+
+        st.info("Nenhuma base salva.")
 
     st.markdown("<p class='sidebar-label'>📍 LOCALIZAÇÃO</p>", unsafe_allow_html=True)
     if 'cidade' in df_raw.columns:
         cidades_unicas = sorted(df_raw['cidade'].dropna().unique())
         cidades_sel = st.multiselect(
-            "Cidades", cidades_unicas, default=cidades_unicas, 
-            key="c_filt", label_visibility="collapsed"
+            "Cidades",
+            cidades_unicas,
+            default=[],
+            key="c_filt",
+            label_visibility="collapsed"
         )
 
     st.markdown("<p class='sidebar-label'>🏢 SEGMENTO</p>", unsafe_allow_html=True)
@@ -58,15 +142,12 @@ with st.sidebar:
         )
     st.divider()
 
-# --- 5. APLICAÇÃO DOS FILTROS ---
-# --- 5. APLICAÇÃO DOS FILTROS --- (Mantenha o que você já tem aqui)
-df_filtered = df_raw.copy()
-if 'cidade' in df_raw.columns:
-    df_filtered = df_filtered[df_filtered['cidade'].isin(cidades_sel)]
-
-if 'setor' in df_raw.columns and setor_sel != "Todos":
-    df_filtered = df_filtered[df_filtered['setor'] == setor_sel]
-
+# --- 5. APLICAÇÃO DOS FILTROS
+df_filtered = apply_filters(
+    df_raw,
+    cidades=cidades_sel,
+    setor=setor_sel
+)
 
 # --- 6. HEADER REFORMULADO (COLE AQUI POR CIMA DO ANTIGO) ---
 # Usamos colunas bem ajustadas para o texto ficar colado no logo
@@ -98,7 +179,7 @@ with tab1:
     with c1:
         with st.container(border=True):
             st.subheader("🏢 Distribuição")
-            fig = px.pie(df_filtered, names='setor', hole=0.4)
+            fig = create_pie_chart(df_filtered)
             # Tira a margem interna para o gráfico crescer na caixa
             fig.update_layout(margin=dict(t=30, b=10, l=10, r=10), height=350)
             st.plotly_chart(fig, width='stretch', key="p_main")
@@ -106,16 +187,9 @@ with tab1:
     with c2:
         with st.container(border=True):
             st.subheader("💰 Capital Médio")
-            cap_setor = df_filtered.groupby('setor')['capital_social'].mean().reset_index()
             
             # --- ALTERAÇÃO AQUI ---
-            fig2 = px.bar(
-                cap_setor, 
-                x='setor', 
-                y='capital_social',
-                color='setor',  # <-- ISSO SINCRONIZA A COR COM A PIZZA E O MAPA
-                text_auto='.2s' # Adiciona o valor no topo da barra (opcional, mas fica top)
-            )
+            fig2 = create_bar_chart(df_filtered)
             
             fig2.update_layout(
                 margin=dict(t=30, b=10, l=10, r=10), 
@@ -132,19 +206,7 @@ with tab1:
             st.subheader("🗺️ Inteligência Geográfica (Dados Oficiais)")
 
             # Criando o mapa
-            fig_mapa = px.scatter_map(
-                df_filtered,
-                lat="lat",
-                lon="lon",
-                color="setor",
-                size="capital_social",
-                size_max=15,
-                zoom=12,
-                hover_name="empresa",
-                # O custom_data garante que o Plotly "carregue" as colunas para o balão
-                custom_data=["cnpj", "setor", "capital_social", "cidade"],
-                map_style="carto-darkmatter"
-            )
+            fig_mapa = create_map(df_filtered)
 
             # Configurando o balão (Hover) de forma manual e segura
             fig_mapa.update_traces(
