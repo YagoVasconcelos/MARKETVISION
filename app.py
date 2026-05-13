@@ -4,6 +4,8 @@ import os
 from datetime import datetime
 from services.filters import apply_filters
 from services.charts import (create_pie_chart, create_bar_chart, create_map)
+from components.header import render_header
+from components.sidebar import render_sidebar
 
 # --- SESSION STATE INICIAL ---
 if "df_raw" not in st.session_state:
@@ -40,107 +42,12 @@ except Exception as e:
 
 df_raw = st.session_state.df_raw
 
-# --- 4. PAINEL LATERAL (SIDEBAR) ---
-with st.sidebar:
-    st.markdown("### ⚙️ MarketVision")
-    st.caption("v2.5 | Intelligence & Big Data")
-    st.divider()
+# --- VALORES PADRÃO DOS FILTROS ---
+cidades_sel = []
+setor_sel = "Todos"
 
-    with st.expander("📂 Carregar Dados", expanded=False):
-
-        uploaded_file = st.file_uploader(
-            "CSV",
-            type=["csv"],
-            label_visibility="collapsed"
-        )
-
-        if uploaded_file:
-
-            nome_arquivo = (
-                f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_"
-                f"{uploaded_file.name}"
-            )
-
-            caminho_upload = os.path.join(
-                "data",
-                "raw",
-                "uploads",
-                nome_arquivo
-            )
-
-            with open(caminho_upload, "wb") as f:
-                f.write(uploaded_file.getbuffer())
-
-            st.session_state.df_raw = load_csv(caminho_upload)
-            st.session_state.base_ativa = nome_arquivo
-
-            df_raw = st.session_state.df_raw
-
-            st.success(f"Arquivo salvo: {nome_arquivo}")
-
-    # HISTÓRICO DE BASES
-    st.markdown("### 🗂 Histórico")
-    st.success(f"📁 Base ativa: {st.session_state.base_ativa}")
-    pasta_uploads = os.path.join(
-        "data",
-        "raw",
-        "uploads"
-    )
-
-    arquivos = []
-
-    if os.path.exists(pasta_uploads):
-
-        arquivos = sorted(
-            os.listdir(pasta_uploads),
-            reverse=True
-        )
-
-    if arquivos:
-
-        arquivo_escolhido = st.selectbox(
-            "Bases disponíveis",
-            arquivos,
-            label_visibility="collapsed"
-        )
-
-        if st.button("📂 Abrir Base"):
-
-            caminho_base = os.path.join(
-                pasta_uploads,
-                arquivo_escolhido
-            )
-
-            st.session_state.df_raw = load_csv(caminho_base)
-            st.session_state.base_ativa = arquivo_escolhido
-
-            df_raw = st.session_state.df_raw
-
-            st.success(f"Base carregada: {arquivo_escolhido}")
-
-    else:
-
-        st.info("Nenhuma base salva.")
-
-    st.markdown("<p class='sidebar-label'>📍 LOCALIZAÇÃO</p>", unsafe_allow_html=True)
-    if 'cidade' in df_raw.columns:
-        cidades_unicas = sorted(df_raw['cidade'].dropna().unique())
-        cidades_sel = st.multiselect(
-            "Cidades",
-            cidades_unicas,
-            default=[],
-            key="c_filt",
-            label_visibility="collapsed"
-        )
-
-    st.markdown("<p class='sidebar-label'>🏢 SEGMENTO</p>", unsafe_allow_html=True)
-    if 'setor' in df_raw.columns:
-        setores = ["Todos"] + sorted(list(df_raw['setor'].unique()))
-        setor_sel = st.selectbox(
-            "Setores", setores, 
-            key="s_filt", label_visibility="collapsed"
-        )
-    st.divider()
+# --- 4. SIDEBAR COMPONENT ---
+cidades_sel, setor_sel = render_sidebar(df_raw)
 
 # --- 5. APLICAÇÃO DOS FILTROS
 df_filtered = apply_filters(
@@ -149,18 +56,7 @@ df_filtered = apply_filters(
     setor=setor_sel
 )
 
-# --- 6. HEADER REFORMULADO (COLE AQUI POR CIMA DO ANTIGO) ---
-# Usamos colunas bem ajustadas para o texto ficar colado no logo
-col_logo, col_txt = st.columns([0.6, 9.4]) 
-
-with col_logo:
-    if os.path.exists("assets/logo.png"): 
-        st.image("assets/logo.png", width=60) 
-
-with col_txt:
-    # Usamos HTML para forçar o título a subir e não ter margem embaixo
-    st.markdown("<h2 style='margin: 0; padding: 0; line-height: 1;'>MarketVision PRO</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='color: #64748b; margin: 0;'>Inteligência de Mercado | Big Data</p>", unsafe_allow_html=True)
+render_header()
 
 # As abas (tabs) vêm logo em seguida, sem espaço vazio
 tab1, tab2, tab3 = st.tabs(["📊 Dashboard", "🧠 Insights", "📄 Relatórios"])
@@ -179,29 +75,53 @@ with tab1:
     with c1:
         with st.container(border=True):
             st.subheader("🏢 Distribuição")
-            fig = create_pie_chart(df_filtered)
-            # Tira a margem interna para o gráfico crescer na caixa
-            fig.update_layout(margin=dict(t=30, b=10, l=10, r=10), height=350)
-            st.plotly_chart(fig, width='stretch', key="p_main")
+            if not df_filtered.empty:
+
+                fig = create_pie_chart(df_filtered)
+
+                fig.update_layout(
+                    margin=dict(t=30, b=10, l=10, r=10),
+                    height=350
+                )
+
+                st.plotly_chart(
+                    fig,
+                    width='stretch',
+                    key="p_main"
+                )
+
+            else:
+                st.warning("Sem dados para exibir.")
     
     with c2:
         with st.container(border=True):
             st.subheader("💰 Capital Médio")
-            
-            # --- ALTERAÇÃO AQUI ---
-            fig2 = create_bar_chart(df_filtered)
-            
-            fig2.update_layout(
-                margin=dict(t=30, b=10, l=10, r=10), 
-                height=350,
-                showlegend=False # Esconde a legenda aqui para não poluir, já que a da pizza serve
-            )
-            # -----------------------
-            
-            st.plotly_chart(fig2, width='stretch', key="b_cap")
+
+            if not df_filtered.empty:
+
+                fig2 = create_bar_chart(df_filtered)
+
+                fig2.update_layout(
+                    margin=dict(t=30, b=10, l=10, r=10),
+                    height=350,
+                    showlegend=False
+                )
+
+                st.plotly_chart(
+                    fig2,
+                    width='stretch',
+                    key="b_cap"
+                )
+
+            else:
+                st.warning("Sem dados para exibir.")
 
     # MAPA COM TRAVA DE SEGURANÇA
-    if 'lat' in df_filtered.columns and 'lon' in df_filtered.columns:
+    if (
+            not df_filtered.empty and
+            'lat' in df_filtered.columns and
+            'lon' in df_filtered.columns
+        ):
         with st.container(border=True):
             st.subheader("🗺️ Inteligência Geográfica (Dados Oficiais)")
 
@@ -232,7 +152,11 @@ with tab2:
     st.subheader("🧠 Consultoria Estratégica MarketVision")
     if not df_filtered.empty:
         if 'data_abertura' in df_filtered.columns:
-            df_filtered['idade_anos'] = (pd.Timestamp.now() - pd.to_datetime(df_filtered['data_abertura'])).dt.days / 365
+            df_filtered = df_filtered.copy()
+            df_filtered["idade_anos"] = (
+                pd.Timestamp.now() -
+                pd.to_datetime(df_filtered["data_abertura"])
+            ).dt.days / 365
             c1, c2 = st.columns(2)
             with c1:
                 st.write("### ⏳ Sobrevivência por Setor")
