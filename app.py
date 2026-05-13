@@ -7,45 +7,8 @@ import os
 # --- CONFIGURAÇÃO ---
 st.set_page_config(page_title="MarketVision PRO", layout="wide", page_icon="assets/logo.png")
 
-st.markdown("""
-    <style>
-        /* 1. Remove o espaço gigante do topo da página */
-        .block-container {
-            padding-top: 3rem !important;
-            padding-bottom: 0rem !important;
-            padding-left: 3rem !important;
-            padding-right: 3rem !important;
-        }
-
-        /* 2. Reduz o espaço entre o Header (MarketVision) e as Tabs */
-        [data-testid="stVerticalBlock"] > div:has(div.stTabs) {
-            margin-top: -30px !important;
-        }
-
-        /* 3. Reduz o espaço entre as Métricas (10000) e o conteúdo abaixo */
-        [data-testid="stMetric"] {
-            padding: 2px !important;
-            margin-bottom: -10px !important;
-        }
-
-        /* 4. Remove o espaço morto entre colunas e o divisor (st.divider) */
-        hr {
-            margin-top: 1px !important;
-            margin-bottom: 1px !important;
-        }
-
-        /* 5. Ajuste fino na sidebar para acompanhar o topo */
-        [data-testid="stSidebarUserContent"] {
-            padding-top: -1rem !important;
-        }
-        
-        /* 6. Puxa o título para perto do logo */
-        .stMarkdown h2 {
-            margin-top: -10px !important;
-            padding-bottom: 0px !important;
-        }
-    </style>
-""", unsafe_allow_html=True)
+with open("styles/style.css") as f:
+    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 # --- 2. FUNÇÃO DE CARREGAMENTO ---
 def load_data(source):
