@@ -1,4 +1,5 @@
 import streamlit as st
+import plotly.graph_objects as go
 
 from services.analytics import (
     calcular_sobrevivencia,
@@ -81,13 +82,67 @@ def render_insights(df_filtered):
 
         top = score_df.iloc[0]
 
-        st.progress(
-            min(
-                int(top["score"] * 5),
-                100
+        score_visual = min(
+            top["score"],
+            100
+        )
+
+        gauge = go.Figure(
+            go.Indicator(
+                mode="gauge+number",
+
+                value=score_visual,
+
+                title={
+                    "text": "Score Estratégico"
+                },
+
+                gauge={
+
+                    "axis": {
+                        "range": [0, 100]
+                    },
+
+                    "bar": {
+                        "color": "#00ffaa"
+                    },
+
+                    "steps": [
+
+                        {
+                            "range": [0, 30],
+                            "color": "#d60b0b"
+                        },
+
+                        {
+                            "range": [30, 70],
+                            "color": "#e0bc1b"
+                        },
+
+                        {
+                            "range": [70, 100],
+                            "color": "#0caf3d"
+                        }
+
+                    ]
+                }
             )
         )
 
+        gauge.update_layout(
+            height=300,
+            margin=dict(
+                l=20,
+                r=20,
+                t=60,
+                b=20
+            )
+        )
+
+        st.plotly_chart(
+            gauge,
+            width='stretch'
+        )
         st.markdown(
             f"""
             ### 🏆 Melhor Oportunidade Atual
