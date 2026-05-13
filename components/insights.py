@@ -59,20 +59,33 @@ def render_insights(df_filtered):
 
     st.subheader("📈 Ranking Inteligente de Oportunidades")
 
-    score_df = calcular_score_oportunidade(df_filtered)
+    score_df = calcular_score_oportunidade(
+        df_filtered,
+        meu_capital
+    )
 
     if not score_df.empty:
 
         st.dataframe(
-            score_df,
+            score_df.style.background_gradient(
+                subset=["score"],
+                cmap="RdYlGn"
+            ),
             width='stretch'
         )
 
         st.bar_chart(
             score_df.set_index("setor")["score"]
         )
-
+        
         top = score_df.iloc[0]
+
+        st.progress(
+            min(
+                int(top["score"] * 5),
+                100
+            )
+        )
 
         st.markdown(
             f"""
@@ -102,4 +115,21 @@ def render_insights(df_filtered):
             - melhor oportunidade regional
             - equilíbrio entre capital e mercado
             """
+        )
+
+        k1, k2, k3 = st.columns(3)
+
+        k1.metric(
+            "🏢 Empresas Analisadas",
+            len(df_filtered)
+        )
+
+        k2.metric(
+            "📈 Melhor Score",
+            round(score_df["score"].max(), 2)
+        )
+
+        k3.metric(
+            "🔥 Setor Líder",
+            score_df.iloc[0]["setor"]
         )

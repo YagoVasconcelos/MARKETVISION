@@ -10,7 +10,10 @@ def calcular_sobrevivencia(df):
 
     df["idade_anos"] = (
         pd.Timestamp.now() -
-        pd.to_datetime(df["data_abertura"])
+        pd.to_datetime(
+            df["data_abertura"],
+            errors="coerce"
+        )
     ).dt.days / 365
 
     sobrevivencia = (
@@ -31,7 +34,7 @@ def calcular_aberturas_recentes(df):
 
     df["idade_anos"] = (
         pd.Timestamp.now() -
-        pd.to_datetime(df["data_abertura"])
+        pd.to_datetime(df["data_abertura"], errors="coerce")
     ).dt.days / 365
 
     recentes = df[df["idade_anos"] <= 2]
@@ -65,7 +68,7 @@ def calcular_melhor_setor(df):
 
     return melhor
 
-def calcular_score_oportunidade(df):
+def calcular_score_oportunidade(df, meu_capital):
 
     if df.empty:
         return pd.DataFrame()
@@ -75,7 +78,7 @@ def calcular_score_oportunidade(df):
     # idade empresa
     df["idade_anos"] = (
         pd.Timestamp.now() -
-        pd.to_datetime(df["data_abertura"])
+        pd.to_datetime(df["data_abertura"], errors="coerce")
     ).dt.days / 365
 
     # agrupamento estratégico
@@ -94,19 +97,62 @@ def calcular_score_oportunidade(df):
         "concorrencia"
     ]
 
+    # compatibilidade do investimento do usuário
+    score_df["fit_investimento"] = (
+
+        meu_capital /
+
+        (score_df["capital_medio"] + 1)
+
+    )
+
     # SCORE INTELIGENTE
     score_df["score"] = (
+
+        # Sobrevivência alta = bom
         (
-            score_df["sobrevivencia"] * 0.4
+            score_df["sobrevivencia"] * 0.5
         )
+
         +
+
+        # Menos concorrência = bom
         (
-            score_df["capital_medio"] / 100000 * 0.3
+            100 / (score_df["concorrencia"] + 1) * 0.3
         )
-        -
+
+        +
+
+        # Menor capital necessário = melhor oportunidade
         (
-            score_df["concorrencia"] * 0.2
+            100000 / (score_df["capital_medio"] + 1) * 0.2
         )
+
+    )
+
+    score_df["nivel"] = pd.cut(
+        score_df["score"],
+        bins=[0, 5, 15, 100],
+        labels=[
+            "Baixa Oportunidade",
+            "Média Oportunidade",
+            "Alta Oportunidade"
+        ]
+    )
+
+    score_df = score_df.sort_values(
+        by="score",
+        ascending=False
+    )
+
+    score_df["risco"] = pd.cut(
+        score_df["concorrencia"],
+        bins=[0, 20, 100, 999999],
+        labels=[
+            "Baixo",
+            "Médio",
+            "Alto"
+        ]
     )
 
     score_df = score_df.sort_values(
