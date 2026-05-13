@@ -143,6 +143,42 @@ def render_insights(df_filtered):
             gauge,
             width='stretch'
         )
+
+        # ==================================================
+        # INTERPRETAÇÃO AUTOMÁTICA DO SCORE
+        # ==================================================
+
+        if top["score"] >= 70:
+
+            st.success("""
+            🚀 Mercado altamente favorável para investimento.
+
+            • baixa saturação
+            • boa sobrevivência empresarial
+            • potencial de crescimento elevado
+            • oportunidade estratégica acima da média
+            """)
+
+        elif top["score"] >= 40:
+
+            st.warning("""
+            ⚠️ Mercado moderadamente competitivo.
+
+            • concorrência intermediária
+            • necessidade de análise regional
+            • potencial razoável de entrada
+            """)
+
+        else:
+
+            st.error("""
+            🔴 Mercado com risco elevado.
+
+            • alta concorrência
+            • baixa oportunidade atual
+            • recomendável avaliar outros setores
+            """)
+        
         st.markdown(
             f"""
             ### 🏆 Melhor Oportunidade Atual
@@ -181,8 +217,20 @@ def render_insights(df_filtered):
         )
 
         k2.metric(
-            "📈 Melhor Score",
-            round(score_df["score"].max(), 2)
+            "🎯 Índice Estratégico",
+            round(score_df["score"].max(), 2),
+
+            help="""
+            Índice calculado com base em:
+
+            • concorrência regional
+            • sobrevivência das empresas
+            • capital médio do setor
+            • potencial de mercado
+
+            Quanto maior o score,
+            melhor a oportunidade estratégica.
+            """
         )
 
         k3.metric(
@@ -194,7 +242,13 @@ def render_insights(df_filtered):
 
         regioes = calcular_regioes_oportunidade(df_filtered)
 
-        st.dataframe(regioes)
+        st.dataframe(
+            regioes.style.background_gradient(
+                subset=["score_regiao"],
+                cmap="Blues"
+            ),
+            width='stretch'
+        )
 
         st.bar_chart(
             regioes.set_index("cidade")["score_regiao"]

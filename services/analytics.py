@@ -107,26 +107,36 @@ def calcular_score_oportunidade(df, meu_capital):
     )
 
     # SCORE INTELIGENTE
+    # NORMALIZAÇÃO DOS DADOS
+
+    score_df["sobrevivencia_norm"] = (
+        score_df["sobrevivencia"] /
+        score_df["sobrevivencia"].max()
+    )
+
+    score_df["concorrencia_norm"] = 1 - (
+        score_df["concorrencia"] /
+        score_df["concorrencia"].max()
+    )
+
+    score_df["capital_norm"] = 1 - (
+        score_df["capital_medio"] /
+        score_df["capital_medio"].max()
+    )
+
+    # SCORE FINAL (0-100)
+
     score_df["score"] = (
 
-        # Sobrevivência alta = bom
-        (
-            score_df["sobrevivencia"] * 0.5
-        )
+        score_df["sobrevivencia_norm"] * 40
 
         +
 
-        # Menos concorrência = bom
-        (
-            100 / (score_df["concorrencia"] + 1) * 0.3
-        )
+        score_df["concorrencia_norm"] * 35
 
         +
 
-        # Menor capital necessário = melhor oportunidade
-        (
-            100000 / (score_df["capital_medio"] + 1) * 0.2
-        )
+        score_df["capital_norm"] * 25
 
     )
 
