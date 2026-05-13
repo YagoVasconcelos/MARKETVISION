@@ -142,11 +142,11 @@ def calcular_score_oportunidade(df, meu_capital):
 
     score_df["nivel"] = pd.cut(
         score_df["score"],
-        bins=[0, 5, 15, 100],
+        bins=[0, 40, 70, 100],
         labels=[
-            "Baixa Oportunidade",
-            "Média Oportunidade",
-            "Alta Oportunidade"
+            "🔴 Baixa",
+            "🟡 Média",
+            "🟢 Alta"
         ]
     )
 
