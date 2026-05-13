@@ -4,7 +4,8 @@ from services.analytics import (
     calcular_sobrevivencia,
     calcular_aberturas_recentes,
     calcular_melhor_setor,
-    calcular_score_oportunidade
+    calcular_score_oportunidade,
+    calcular_regioes_oportunidade
 )
 
 def render_insights(df_filtered):
@@ -77,7 +78,7 @@ def render_insights(df_filtered):
         st.bar_chart(
             score_df.set_index("setor")["score"]
         )
-        
+
         top = score_df.iloc[0]
 
         st.progress(
@@ -132,4 +133,14 @@ def render_insights(df_filtered):
         k3.metric(
             "🔥 Setor Líder",
             score_df.iloc[0]["setor"]
+        )
+
+        st.subheader("🌎 Regiões Mais Promissoras")
+
+        regioes = calcular_regioes_oportunidade(df_filtered)
+
+        st.dataframe(regioes)
+
+        st.bar_chart(
+            regioes.set_index("cidade")["score_regiao"]
         )

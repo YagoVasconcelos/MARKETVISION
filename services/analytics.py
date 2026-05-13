@@ -161,3 +161,43 @@ def calcular_score_oportunidade(df, meu_capital):
     )
 
     return score_df.reset_index()
+
+def calcular_regioes_oportunidade(df):
+
+    if (
+        df.empty or
+        'cidade' not in df.columns
+    ):
+        return pd.DataFrame()
+
+    regioes = (
+        df.groupby("cidade")
+        .agg({
+            "setor": "count",
+            "capital_social": "mean"
+        })
+        .rename(columns={
+            "setor": "empresas",
+            "capital_social": "capital_medio"
+        })
+    )
+
+    # SCORE REGIONAL
+    regioes["score_regiao"] = (
+
+        # menos empresas = melhor oportunidade
+        (100 / (regioes["empresas"] + 1) * 0.6)
+
+        +
+
+        # menor capital médio = melhor entrada
+        (100000 / (regioes["capital_medio"] + 1) * 0.4)
+
+    )
+
+    regioes = regioes.sort_values(
+        by="score_regiao",
+        ascending=False
+    )
+
+    return regioes.reset_index()
