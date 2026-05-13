@@ -64,3 +64,54 @@ def calcular_melhor_setor(df):
     melhor = stats.sort_values(by='qtd').iloc[0]
 
     return melhor
+
+def calcular_score_oportunidade(df):
+
+    if df.empty:
+        return pd.DataFrame()
+
+    df = df.copy()
+
+    # idade empresa
+    df["idade_anos"] = (
+        pd.Timestamp.now() -
+        pd.to_datetime(df["data_abertura"])
+    ).dt.days / 365
+
+    # agrupamento estratégico
+    score_df = (
+        df.groupby("setor")
+        .agg({
+            "capital_social": "mean",
+            "idade_anos": "mean",
+            "setor": "count"
+        })
+    )
+
+    score_df.columns = [
+        "capital_medio",
+        "sobrevivencia",
+        "concorrencia"
+    ]
+
+    # SCORE INTELIGENTE
+    score_df["score"] = (
+        (
+            score_df["sobrevivencia"] * 0.4
+        )
+        +
+        (
+            score_df["capital_medio"] / 100000 * 0.3
+        )
+        -
+        (
+            score_df["concorrencia"] * 0.2
+        )
+    )
+
+    score_df = score_df.sort_values(
+        by="score",
+        ascending=False
+    )
+
+    return score_df.reset_index()

@@ -3,9 +3,9 @@ import streamlit as st
 from services.analytics import (
     calcular_sobrevivencia,
     calcular_aberturas_recentes,
-    calcular_melhor_setor
+    calcular_melhor_setor,
+    calcular_score_oportunidade
 )
-
 
 def render_insights(df_filtered):
 
@@ -14,6 +14,10 @@ def render_insights(df_filtered):
     if df_filtered.empty:
         st.warning("⚠️ Ajuste os filtros para gerar insights.")
         return
+
+    # ==================================================
+    # GRÁFICOS ANALÍTICOS
+    # ==================================================
 
     c1, c2 = st.columns(2)
 
@@ -37,22 +41,65 @@ def render_insights(df_filtered):
 
     st.divider()
 
+    # ==================================================
+    # SIMULADOR
+    # ==================================================
+
     st.subheader("💡 Simulador de Investimento Inteligente")
 
-    st.number_input(
+    meu_capital = st.number_input(
         "Investimento pretendido (R$)",
         min_value=1000,
         value=50000
     )
 
-    melhor = calcular_melhor_setor(df_filtered)
+    # ==================================================
+    # RANKING
+    # ==================================================
 
-    if melhor is not None:
+    st.subheader("📈 Ranking Inteligente de Oportunidades")
+
+    score_df = calcular_score_oportunidade(df_filtered)
+
+    if not score_df.empty:
+
+        st.dataframe(
+            score_df,
+            width='stretch'
+        )
+
+        st.bar_chart(
+            score_df.set_index("setor")["score"]
+        )
+
+        top = score_df.iloc[0]
+
+        st.markdown(
+            f"""
+            ### 🏆 Melhor Oportunidade Atual
+
+            **Setor:** {top['setor']}
+
+            **Score Estratégico:** {top['score']:.2f}
+
+            **Concorrência:** {top['concorrencia']}
+
+            **Capital Médio:** R$ {top['capital_medio']:,.2f}
+
+            **Sobrevivência Média:** {top['sobrevivencia']:.1f} anos
+            """
+        )
 
         st.success(
             f"""
-            ✅ Recomendação:
-            O setor de **{melhor['setor']}**
-            apresenta menor concorrência.
+            ✅ Recomendação Estratégica:
+
+            O setor de **{top['setor']}**
+            apresenta atualmente:
+
+            - menor concorrência
+            - boa sobrevivência empresarial
+            - melhor oportunidade regional
+            - equilíbrio entre capital e mercado
             """
         )
