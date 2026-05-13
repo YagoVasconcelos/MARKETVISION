@@ -14,9 +14,10 @@ section[data-testid="stSidebar"] {
 [data-testid="stMetric"] {
     background: linear-gradient(145deg, #111827, #0f172a);
     border: 1px solid rgba(255,255,255,0.05);
-    padding: 20px;
+    padding: 15px !important;
     border-radius: 18px;
     box-shadow: 0 0 20px rgba(0,0,0,0.25);
+    margin-bottom: -10px !important;
 }
 
 /* CONTAINERS */
@@ -73,7 +74,7 @@ h1, h2, h3 {
 
         /* 5. Ajuste fino na sidebar para acompanhar o topo */
         [data-testid="stSidebarUserContent"] {
-            padding-top: -1rem !important;
+            padding-top: 0rem !important;
         }
         
         /* 6. Puxa o título para perto do logo */
