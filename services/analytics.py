@@ -98,11 +98,13 @@ def calcular_score_oportunidade(df, meu_capital):
     ]
 
     # compatibilidade do investimento do usuário
-    score_df["fit_investimento"] = (
+    score_df["fit_investimento"] = 1 - abs(
 
-        meu_capital /
+        meu_capital - score_df["capital_medio"]
 
-        (score_df["capital_medio"] + 1)
+    ) / (
+
+        score_df["capital_medio"] + 1
 
     )
 
@@ -124,19 +126,31 @@ def calcular_score_oportunidade(df, meu_capital):
         score_df["capital_medio"].max()
     )
 
+    # NORMALIZAÇÃO DO FIT DE INVESTIMENTO
+
+    score_df["fit_investimento"] = (
+        score_df["fit_investimento"]
+        /
+        score_df["fit_investimento"].max()
+    ).clip(0, 1)
+
     # SCORE FINAL (0-100)
 
     score_df["score"] = (
 
-        score_df["sobrevivencia_norm"] * 40
+        score_df["sobrevivencia_norm"] * 35
 
         +
 
-        score_df["concorrencia_norm"] * 35
+        score_df["concorrencia_norm"] * 25
 
         +
 
-        score_df["capital_norm"] * 25
+        score_df["capital_norm"] * 15
+
+        +
+
+        score_df["fit_investimento"] * 25
 
     )
 

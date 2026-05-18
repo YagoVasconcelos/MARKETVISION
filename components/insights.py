@@ -8,6 +8,7 @@ from services.analytics import (
     calcular_score_oportunidade,
     calcular_regioes_oportunidade
 )
+from services.ai_insights import gerar_parecer
 
 def render_insights(df_filtered):
 
@@ -68,12 +69,91 @@ def render_insights(df_filtered):
 
     if not score_df.empty:
 
+        score_df_view = score_df[[
+            "setor",
+            "score",
+            "concorrencia",
+            "capital_medio",
+            "sobrevivencia",
+            "nivel",
+            "risco"
+        ]].copy()
+
+        score_df_view = score_df_view.rename(columns={
+
+            "setor": "🏢 Setor",
+            "score": "🎯 Score Estratégico",
+            "concorrencia": "⚔️ Concorrência",
+            "capital_medio": "💰 Capital Médio",
+            "sobrevivencia": "📈 Sobrevivência",
+            "nivel": "🚀 Nível",
+            "risco": "🛡️ Risco"
+        })
+
         st.dataframe(
-            score_df.style.background_gradient(
-                subset=["score"],
+
+            score_df_view.style
+            .background_gradient(
+                subset=["🎯 Score Estratégico"],
                 cmap="RdYlGn"
-            ),
-            width='stretch'
+            )
+            .format({
+
+                "🎯 Score Estratégico": "{:.2f}",
+                "💰 Capital Médio": "R$ {:,.2f}",
+                "📈 Sobrevivência": "{:.1f} anos"
+
+            }),
+
+            width='stretch',
+
+            column_config={
+
+                "🏢 Setor": st.column_config.TextColumn(
+                    "🏢 Setor",
+                    help="Segmento empresarial analisado."
+                ),
+
+                "🎯 Score Estratégico": st.column_config.ProgressColumn(
+                    "🎯 Score Estratégico",
+                    help="Índice geral calculado pela IA analítica." \
+                    "O Score Estratégico é basicamente uma nota inteligente que o sistema cria para dizer: " \
+                    " Quão boa é a oportunidade de investir nesse setor?" \
+                    "Ele junta vários fatores do mercado e transforma tudo em uma pontuação de 0 a 100.",
+                    min_value=0,
+                    max_value=100,
+                    format="%.2f"
+                ),
+
+                "⚔️ Concorrência": st.column_config.NumberColumn(
+                    "⚔️ Concorrência",
+                    help="Quantidade de empresas no setor.",
+                    format="%d empresas"
+                ),
+
+                "💰 Capital Médio": st.column_config.NumberColumn(
+                    "💰 Capital Médio",
+                    help="Média de capital social do setor.",
+                    format="R$ %.2f"
+                ),
+
+                "📈 Sobrevivência": st.column_config.NumberColumn(
+                    "📈 Sobrevivência",
+                    help="Tempo médio de sobrevivência.",
+                    format="%.1f anos"
+                ),
+
+                "🚀 Nível": st.column_config.TextColumn(
+                    "🚀 Nível",
+                    help="Classificação estratégica automática."
+                ),
+
+                "🛡️ Risco": st.column_config.TextColumn(
+                    "🛡️ Risco",
+                    help="Nível de risco do mercado."
+                )
+
+            }
         )
 
         st.bar_chart(
@@ -141,44 +221,26 @@ def render_insights(df_filtered):
 
         st.plotly_chart(
             gauge,
-            width='stretch'
+            width='stretch',
         )
 
         # ==================================================
         # INTERPRETAÇÃO AUTOMÁTICA DO SCORE
         # ==================================================
 
-        if top["score"] >= 70:
+        parecer = gerar_parecer(
+            top["score"]
+        )
 
-            st.success("""
-            🚀 Mercado altamente favorável para investimento.
+        if parecer["cor"] == "success":
+            st.success(parecer["texto"])
 
-            • baixa saturação
-            • boa sobrevivência empresarial
-            • potencial de crescimento elevado
-            • oportunidade estratégica acima da média
-            """)
-
-        elif top["score"] >= 40:
-
-            st.warning("""
-            ⚠️ Mercado moderadamente competitivo.
-
-            • concorrência intermediária
-            • necessidade de análise regional
-            • potencial razoável de entrada
-            """)
+        elif parecer["cor"] == "warning":
+            st.warning(parecer["texto"])
 
         else:
+            st.error(parecer["texto"])
 
-            st.error("""
-            🔴 Mercado com risco elevado.
-
-            • alta concorrência
-            • baixa oportunidade atual
-            • recomendável avaliar outros setores
-            """)
-        
         st.markdown(
             f"""
             ### 🏆 Melhor Oportunidade Atual
@@ -242,12 +304,98 @@ def render_insights(df_filtered):
 
         regioes = calcular_regioes_oportunidade(df_filtered)
 
+        # ==================================================
+        # TABELA REGIONAL INTELIGENTE
+        # ==================================================
+
+        regioes_view = regioes.rename(columns={
+
+            "cidade": "🌎 Cidade",
+
+            "empresas": "🏢 Empresas",
+
+            "capital_medio": "💰 Capital Médio",
+
+            "score_regiao": "🎯 Score Regional"
+
+        })
+
         st.dataframe(
-            regioes.style.background_gradient(
-                subset=["score_regiao"],
+
+            regioes_view.style
+            .background_gradient(
+                subset=["🎯 Score Regional"],
                 cmap="Blues"
-            ),
-            width='stretch'
+            )
+            .format({
+
+                "💰 Capital Médio": "R$ {:,.2f}",
+
+                "🎯 Score Regional": "{:.2f}"
+
+            }),
+
+            width='stretch',
+
+            column_config={
+
+                "🌎 Cidade": st.column_config.TextColumn(
+                    "🌎 Cidade",
+                    help="""
+        Cidade analisada pelo sistema estratégico.
+
+        Representa a região onde foram encontradas
+        empresas compatíveis com os filtros atuais.
+        """
+                ),
+
+                "🏢 Empresas": st.column_config.NumberColumn(
+                    "🏢 Empresas",
+                    help="""
+        Quantidade de empresas encontradas na cidade.
+
+        Menor quantidade pode indicar:
+        • menor concorrência
+        • mercado menos saturado
+        • maior oportunidade de entrada
+        """,
+                    format="%d empresas"
+                ),
+
+                "💰 Capital Médio": st.column_config.NumberColumn(
+                    "💰 Capital Médio",
+                    help="""
+        Média de capital social das empresas da região.
+
+        Ajuda a identificar:
+        • barreira financeira
+        • nível econômico do mercado
+        • dificuldade de entrada
+        """,
+                    format="R$ %.2f"
+                ),
+
+                "🎯 Score Regional": st.column_config.ProgressColumn(
+                    "🎯 Score Regional",
+                    help="""
+        Índice estratégico calculado automaticamente.
+
+        O sistema considera:
+        • quantidade de empresas
+        • capital médio regional
+        • saturação do mercado
+
+        Quanto maior o score:
+        • melhor a oportunidade regional
+        • menor a concorrência
+        • maior potencial estratégico
+        """,
+                    min_value=0,
+                    max_value=100,
+                    format="%.2f"
+                )
+
+            }
         )
 
         st.bar_chart(
