@@ -11,7 +11,7 @@ from services.economia import (
     calcular_taxa_inteligente,
     calcular_risco_futuro,
     calcular_cenario_economico,
-    obter_indicadores_economicos
+    calcular_impacto_setorial
 )
 
 
@@ -23,7 +23,7 @@ def render_economia(df_filtered):
     # INDICADORES ECONÔMICOS
     # ==================================================
 
-    indicadores = obter_indicadores_economicos()
+    indicadores = calcular_cenario_economico()
 
     st.subheader("🌎 Cenário Econômico Atual")
 
@@ -268,6 +268,13 @@ def render_economia(df_filtered):
         # ==================================================
 
         taxa_base = calcular_taxa_inteligente(row, economia)
+
+        impacto_setorial = calcular_impacto_setorial(
+            setor,
+            economia
+        )
+
+        taxa_base += impacto_setorial
 
         # ==================================================
         # AJUSTE PELO CENÁRIO

@@ -332,3 +332,76 @@ def obter_indicadores_economicos():
         "estabilidade": "Moderada"
 
     }
+
+def calcular_impacto_setorial(setor, economia):
+
+    """
+    IA econômica setorial.
+    Ajusta crescimento conforme economia.
+    """
+
+    setor = str(setor).lower()
+
+    impacto = 0
+
+    dolar = economia["dolar"]
+
+    selic = economia["selic"]
+
+    inflacao = economia["inflacao"]
+
+    pib = economia["pib"]
+
+    # ==================================================
+    # TECNOLOGIA
+    # ==================================================
+
+    if "tecnologia" in setor:
+
+        impacto += pib / 100
+
+        impacto -= inflacao / 300
+
+    # ==================================================
+    # CONSTRUÇÃO
+    # ==================================================
+
+    elif "constr" in setor:
+
+        impacto -= selic / 120
+
+    # ==================================================
+    # VAREJO
+    # ==================================================
+
+    elif "varejo" in setor:
+
+        impacto -= inflacao / 150
+
+    # ==================================================
+    # AGRO
+    # ==================================================
+
+    elif "agro" in setor:
+
+        if dolar > 5:
+            impacto += 0.04
+
+    # ==================================================
+    # EXPORTAÇÃO
+    # ==================================================
+
+    elif "export" in setor:
+
+        if dolar > 5:
+            impacto += 0.05
+
+    # ==================================================
+    # LIMITES
+    # ==================================================
+
+    impacto = max(-0.08, impacto)
+
+    impacto = min(0.10, impacto)
+
+    return impacto
