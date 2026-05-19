@@ -10,6 +10,7 @@ from components.dashboard import render_dashboard
 from components.insights import render_insights
 from components.reports import render_reports
 from services.analytics import calcular_sobrevivencia
+from components.economia import render_economia
 
 
 # --- SESSION STATE INICIAL ---
@@ -64,7 +65,7 @@ df_filtered = apply_filters(
 render_header()
 
 # As abas (tabs) vêm logo em seguida, sem espaço vazio
-tab1, tab2, tab3 = st.tabs(["📊 Dashboard", "🧠 Insights", "📄 Relatórios"])
+tab1, tab2, tab3, tab4 = st.tabs(["📊 Dashboard", "🧠 Insights", "📄 Relatórios", "📈 Economia Estratégica"])
 
 with tab1:
     render_dashboard(df_filtered)
@@ -74,3 +75,7 @@ with tab2:
 
 with tab3:
     render_reports(df_filtered)
+
+with tab4:
+
+    render_economia(df_filtered)
