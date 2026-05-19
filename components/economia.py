@@ -199,7 +199,9 @@ def render_economia(df_filtered):
     # ECONOMIA GLOBAL
     # ==================================================
 
-    st.subheader("🌎 Cenário Econômico Global")
+    st.subheader("" \
+    "" \
+    " Global")
 
     economia = calcular_cenario_economico()
 
