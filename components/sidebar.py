@@ -2,6 +2,7 @@ import streamlit as st
 import os
 from datetime import datetime
 from services.loader import load_csv
+from services.localidades import (obter_estados, obter_cidades)
 
 def render_sidebar(df_raw):
 
@@ -94,21 +95,111 @@ def render_sidebar(df_raw):
 
             st.info("Nenhuma base salva.")
 
-        st.markdown("<p class='sidebar-label'>📍 LOCALIZAÇÃO</p>", unsafe_allow_html=True)
+        # ==================================================
+        # LOCALIZAÇÃO
+        # ==================================================
 
-        if 'cidade' in df_raw.columns:
+        col1, col2 = st.columns([10,1])
 
-            cidades_unicas = sorted(
-                df_raw['cidade'].dropna().unique()
+        with col1:
+            st.markdown(
+                "<p class='sidebar-label'>📍 LOCALIZAÇÃO</p>",
+                unsafe_allow_html=True
             )
 
-            cidades_sel = st.multiselect(
-                "Cidades",
-                cidades_unicas,
-                default=[],
-                key="c_filt",
-                label_visibility="collapsed"
+        with col2:
+
+            limpar = st.button(
+                "🧹",
+                key="limpar_filtros",
+                help="Limpar filtros"
             )
+
+            if limpar:
+
+                st.session_state.estado_filtro = "Todos"
+                st.session_state.c_filt = []
+                st.session_state.setor_filtro = "Todos"
+
+                st.rerun()
+
+        # ==================================================
+        # ESTADOS
+        # ==================================================
+
+        estados = obter_estados()
+
+        estado_sel = st.selectbox(
+
+            "Estado",
+
+            estados,
+
+            index=None,
+
+            key="estado_filtro",
+
+            label_visibility="collapsed",
+
+            placeholder="Selecione um estado"
+        )
+
+        estado_anterior = st.session_state.get("estado_anterior")
+
+        if estado_anterior != estado_sel:
+
+            st.session_state.c_filt = []
+
+            st.session_state.estado_anterior = estado_sel
+
+        # ==================================================
+        # CIDADES DA API
+        # ==================================================
+
+        if estado_sel:
+
+            cidades_api = obter_cidades(estado_sel)
+
+        else:
+
+            cidades_api = []
+
+        # ==================================================
+        # CIDADES
+        # ==================================================
+
+        if estado_sel:
+
+            cidades_final = cidades_api
+
+        else:
+
+            if 'cidade' in df_raw.columns:
+
+                cidades_final = sorted(
+                    list(df_raw['cidade'].dropna().unique())
+                )
+
+            else:
+
+                cidades_final = []
+
+        # ==================================================
+        # FILTRO DE CIDADES
+        # ==================================================
+
+        cidades_sel = st.multiselect(
+
+            "Cidades",
+
+            cidades_final,
+
+            key="c_filt",
+
+            label_visibility="collapsed",
+
+            placeholder="Selecione cidades"
+        )
 
         st.markdown("<p class='sidebar-label'>🏢 SEGMENTO</p>", unsafe_allow_html=True)
 
@@ -119,12 +210,20 @@ def render_sidebar(df_raw):
             )
 
             setor_sel = st.selectbox(
+
                 "Setores",
+
                 setores,
-                key="s_filt",
-                label_visibility="collapsed"
+
+                index=None,
+
+                key="setor_filtro",
+
+                label_visibility="collapsed",
+
+                placeholder="Selecione um segmento"
             )
 
         st.divider()
 
-    return cidades_sel, setor_sel
+    return cidades_sel, setor_sel, estado_sel

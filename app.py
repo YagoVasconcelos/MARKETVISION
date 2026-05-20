@@ -53,7 +53,7 @@ cidades_sel = []
 setor_sel = "Todos"
 
 # --- 4. SIDEBAR COMPONENT ---
-cidades_sel, setor_sel = render_sidebar(df_raw)
+cidades_sel, setor_sel, estado_sel = render_sidebar(df_raw)
 
 # --- 5. APLICAÇÃO DOS FILTROS
 df_filtered = apply_filters(

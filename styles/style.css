@@ -104,3 +104,31 @@ section[data-testid="stSidebar"] div:first-child {
     margin-top: 0rem !important;
     padding-top: 0rem !important;
 }
+
+/* ==================================================
+   BOTÃO LIMPAR FILTROS
+================================================== */
+
+/* BOTÃO LIMPAR */
+
+section[data-testid="stSidebar"] div[data-testid="stButton"] button {
+
+    width: 28px !important;
+    height: 28px !important;
+
+    min-height: 28px !important;
+
+    border-radius: 8px !important;
+
+    padding: 0 !important;
+
+    font-size: 12px !important;
+
+    display: flex !important;
+
+    align-items: center !important;
+
+    justify-content: center !important;
+
+    margin-top: -6px !important;
+}
