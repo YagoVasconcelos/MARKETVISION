@@ -548,6 +548,37 @@ com foco em:
 
 ---
 
+# ▶️ Como Executar o Projeto
+```bash
+
+1️⃣ Clonar o Repositório
+git clone https://github.com/seuusuario/MarketVision_PRO.git
+
+2️⃣ Entrar na Pasta do Projeto
+cd MarketVision_PRO
+
+3️⃣ Criar Ambiente Virtual no "Windows"
+python -m venv venv
+
+4️⃣ Ativar Ambiente Virtual no "Windows PowerShell"
+venv\Scripts\activate
+
+5️⃣ Instalar Dependências no "Windows"
+pip install -r requirements.txt
+
+6️⃣ Executar Plataforma no "Windows"
+streamlit run app.py
+
+🌐 Acesso
+Após iniciar o Streamlit:
+http://localhost:8501
+
+📂 Bases de Dados
+Os arquivos CSV podem ser adicionados em:
+/data/raw/
+
+---
+
 # 👨‍💻 Desenvolvido por
 
 **Yago Marinho**
