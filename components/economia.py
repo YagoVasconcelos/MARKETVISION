@@ -10,8 +10,13 @@ from services.economia import (
     calcular_projecao_financeira,
     calcular_taxa_inteligente,
     calcular_risco_futuro,
-    calcular_cenario_economico,
     calcular_impacto_setorial
+)
+
+
+
+from services.economia_api import (
+    obter_cenario_economico
 )
 
 
@@ -20,39 +25,49 @@ def render_economia(df_filtered):
     st.subheader("📈 Economia Estratégica IA")
 
     # ==================================================
-    # INDICADORES ECONÔMICOS
+    # CENÁRIO ECONÔMICO REAL
     # ==================================================
 
-    indicadores = calcular_cenario_economico()
+    cenario_real = obter_cenario_economico()
+    
+    economia = cenario_real
 
-    st.subheader("🌎 Cenário Econômico Atual")
+    col1, col2, col3, col4, col5 = st.columns(5)
 
-    e1, e2, e3, e4, e5 = st.columns(5)
+    with col1:
 
-    e1.metric(
-        "💵 Dólar",
-        f"R$ {indicadores['dolar']}"
-    )
+        st.metric(
+            "🏦 Selic",
+            f"{cenario_real['selic']}%"
+        )
 
-    e2.metric(
-        "📈 SELIC",
-        f"{indicadores['selic']}%"
-    )
+    with col2:
 
-    e3.metric(
-        "📉 Inflação",
-        f"{indicadores['inflacao']}%"
-    )
+        st.metric(
+            "📈 IPCA",
+            f"{cenario_real['inflacao']}%"
+        )
 
-    e4.metric(
-        "🇧🇷 PIB",
-        f"{indicadores['pib']}%"
-    )
+    with col3:
 
-    e5.metric(
-        "🌎 Estabilidade",
-        indicadores["estabilidade"]
-    )
+        st.metric(
+            "💵 Dólar",
+            f"R$ {cenario_real['dolar']}"
+        )
+
+    with col4:
+
+        st.metric(
+            "🌎 PIB",
+            f"{cenario_real['pib']}%"
+        )
+
+    with col5:
+
+        st.metric(
+            "🛡️ Estabilidade",
+            cenario_real["estabilidade"]
+        )
 
     if df_filtered.empty:
         st.warning(
@@ -196,43 +211,6 @@ def render_economia(df_filtered):
     )
 
     # ==================================================
-    # ECONOMIA GLOBAL
-    # ==================================================
-
-    st.subheader("" \
-    "" \
-    " Global")
-
-    economia = calcular_cenario_economico()
-
-    e1, e2, e3, e4, e5 = st.columns(5)
-
-    e1.metric(
-        "💸 Inflação",
-        f"{economia['inflacao']}%"
-    )
-
-    e2.metric(
-        "🏦 SELIC",
-        f"{economia['selic']}%"
-    )
-
-    e3.metric(
-        "💵 Dólar",
-        f"R$ {economia['dolar']}"
-    )
-
-    e4.metric(
-        "📈 PIB",
-        f"{economia['pib']}%"
-    )
-
-    e5.metric(
-        "🛡️ Estabilidade",
-        f"{economia['estabilidade']}%"
-    )
-
-    # ==================================================
     # CENÁRIO
     # ==================================================
 
@@ -269,10 +247,7 @@ def render_economia(df_filtered):
 
         taxa_base = calcular_taxa_inteligente(row, economia)
 
-        impacto_setorial = calcular_impacto_setorial(
-            setor,
-            economia
-        )
+        impacto_setorial = calcular_impacto_setorial(setor, economia)
 
         taxa_base += impacto_setorial
 

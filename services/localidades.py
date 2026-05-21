@@ -1,56 +1,68 @@
 import requests
 
 
-# ==================================================
-# ESTADOS
-# ==================================================
-
 def obter_estados():
 
     url = (
-        "https://servicodados.ibge.gov.br/api/v1/"
-        "localidades/estados"
+        "https://servicodados.ibge.gov.br/api/v1/localidades/estados"
     )
 
-    response = requests.get(url)
+    try:
 
-    dados = response.json()
+        response = requests.get(
+            url,
+            timeout=10
+        )
 
-    estados = sorted([
+        response.raise_for_status()
 
-        estado["sigla"]
+        dados = response.json()
 
-        for estado in dados
+        estados = sorted([
+            estado["sigla"]
+            for estado in dados
+        ])
 
-    ])
+        return estados
 
-    return estados
+    except:
 
+        # fallback seguro
+        return [
+            "AC", "AL", "AP", "AM", "BA",
+            "CE", "DF", "ES", "GO", "MA",
+            "MT", "MS", "MG", "PA", "PB",
+            "PR", "PE", "PI", "RJ", "RN",
+            "RS", "RO", "RR", "SC", "SP",
+            "SE", "TO"
+        ]
 
-# ==================================================
-# CIDADES
-# ==================================================
 
 def obter_cidades(uf):
-
-    if not uf:
-        return []
 
     url = (
         f"https://servicodados.ibge.gov.br/api/v1/"
         f"localidades/estados/{uf}/municipios"
     )
 
-    response = requests.get(url)
+    try:
 
-    dados = response.json()
+        response = requests.get(
+            url,
+            timeout=10
+        )
 
-    cidades = sorted([
+        response.raise_for_status()
 
-        cidade["nome"]
+        dados = response.json()
 
-        for cidade in dados
+        cidades = sorted([
+            cidade["nome"]
+            for cidade in dados
+        ])
 
-    ])
+        return cidades
 
-    return cidades
+    except:
+
+        return []

@@ -1,5 +1,6 @@
 import pandas as pd
-
+from services.ibge_api import obter_dados_cidade
+from services.pib_api import obter_pib_municipio
 
 def calcular_sobrevivencia(df):
 
@@ -75,6 +76,110 @@ def calcular_score_oportunidade(df, meu_capital):
 
     df = df.copy()
 
+    # ==================================================
+    # BONUS REGIONAL IA
+    # ==================================================
+
+    df["bonus_regional"] = 0
+
+    # ==================================================
+    # IA REGIONAL POR CIDADE
+    # ==================================================
+
+    if "cidade" in df.columns:
+
+        for idx, row in df.iterrows():
+
+            cidade = row["cidade"]
+
+            cidade_info = obter_dados_cidade(cidade)
+
+            bonus = 0
+
+            potencial = 0
+
+            pib_bonus = 0
+
+            if cidade_info:
+
+                regiao = cidade_info["regiao"]
+
+                cidade_id = cidade_info.get("id")
+
+                potencial = calcular_potencial_regional(regiao)
+
+                # ==================================================
+                # BONUS REGIONAL
+                # ==================================================
+
+                if regiao == "Norte":
+                    bonus += 8
+
+                elif regiao == "Nordeste":
+                    bonus += 6
+
+                elif regiao == "Centro-Oeste":
+                    bonus += 7
+
+                elif regiao == "Sul":
+                    bonus += 5
+
+                elif regiao == "Sudeste":
+                    bonus += 4
+
+                # ==================================================
+                # PIB MUNICIPAL
+                # ==================================================
+
+                if cidade_info:
+
+                    regiao = cidade_info["regiao"]
+
+                    cidade_id = cidade_info.get("id")
+
+                    potencial = calcular_potencial_regional(regiao)
+
+                    # bônus regional
+                    if regiao == "Norte":
+                        bonus += 8
+
+                    elif regiao == "Nordeste":
+                        bonus += 6
+
+                    elif regiao == "Centro-Oeste":
+                        bonus += 7
+
+                    elif regiao == "Sul":
+                        bonus += 5
+
+                    elif regiao == "Sudeste":
+                        bonus += 4
+
+                    # PIB municipal
+                    if cidade_id:
+
+                        pib = obter_pib_municipio(cidade_id)
+
+                        if pib:
+
+                            if pib > 50000:
+                                pib_bonus += 10
+
+                            elif pib > 30000:
+                                pib_bonus += 7
+
+                            elif pib > 15000:
+                                pib_bonus += 5
+
+                            else:
+                                pib_bonus += 2
+
+                df.at[idx, "bonus_regional"] = (
+                    bonus +
+                    potencial +
+                    pib_bonus
+                )
+
     # idade empresa
     df["idade_anos"] = (
         pd.Timestamp.now() -
@@ -87,14 +192,16 @@ def calcular_score_oportunidade(df, meu_capital):
         .agg({
             "capital_social": "mean",
             "idade_anos": "mean",
-            "setor": "count"
+            "setor": "count",
+            "bonus_regional": "mean"
         })
     )
 
     score_df.columns = [
         "capital_medio",
         "sobrevivencia",
-        "concorrencia"
+        "concorrencia",
+        "bonus_regional"
     ]
 
     # compatibilidade do investimento do usuário
@@ -151,6 +258,10 @@ def calcular_score_oportunidade(df, meu_capital):
         +
 
         score_df["fit_investimento"] * 25
+
+        +
+
+        score_df["bonus_regional"]
 
     )
 
@@ -225,3 +336,21 @@ def calcular_regioes_oportunidade(df):
     )
 
     return regioes.reset_index()
+
+def calcular_potencial_regional(regiao):
+
+    """
+    IA territorial estratégica.
+    """
+
+    potenciais = {
+
+        "Norte": 9,
+        "Nordeste": 8,
+        "Centro-Oeste": 10,
+        "Sul": 7,
+        "Sudeste": 6
+
+    }
+
+    return potenciais.get(regiao, 5)

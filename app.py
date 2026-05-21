@@ -11,7 +11,7 @@ from components.insights import render_insights
 from components.reports import render_reports
 from services.analytics import calcular_sobrevivencia
 from components.economia import render_economia
-
+from components.mapa import render_mapa_oportunidades
 
 # --- SESSION STATE INICIAL ---
 if "df_raw" not in st.session_state:
@@ -79,3 +79,5 @@ with tab3:
 with tab4:
 
     render_economia(df_filtered)
+
+    render_mapa_oportunidades(df_filtered)
