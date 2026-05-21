@@ -573,11 +573,13 @@ streamlit run app.py
 Após iniciar o Streamlit:
 http://localhost:8501
 
-📂 Bases de Dados
+📂 Bases de Dados - Receita federal "Gratuito"
 Os arquivos CSV podem ser adicionados em:
 /data/raw/
+ou
+Você pode converter os aqruivos extraidos na pasta:\MARKETVISION\database\raw_rf
+Com o Comando; python services/rf_converter.py 
 
----
 ```
 
 # 👨‍💻 Desenvolvido por
