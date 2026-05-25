@@ -1,10 +1,14 @@
 import streamlit as st
 import folium
 import pandas as pd
-
+import streamlit as st
 from streamlit_folium import st_folium
 from services.analytics import (calcular_regioes_oportunidade)
 from services.geocode import obter_coordenadas
+
+@st.cache_data
+def obter_coordenadas_cached(cidade):
+    return obter_coordenadas(cidade)
 
 def render_mapa_oportunidades(df):
 
@@ -59,7 +63,7 @@ def render_mapa_oportunidades(df):
         Score Regional: {score}
         """
 
-        coords = obter_coordenadas(cidade)
+        coords = obter_coordenadas_cached(cidade)
 
         if not coords:
             continue
